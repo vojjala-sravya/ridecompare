@@ -19,7 +19,8 @@ TechnologyPurposeHTML, CSS, JavaScriptFrontend — no frameworks usedOpenStreetM
 
 📸 Screenshots
 
-(Add your screenshots here after deploying)
+![RideCompare Screenshot](screenshots/Screenshot%202026-05-24%20124736.png)
+
 
 
 ⚙️ How to Run Locally
