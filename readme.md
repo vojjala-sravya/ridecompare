@@ -19,7 +19,10 @@ TechnologyPurposeHTML, CSS, JavaScriptFrontend — no frameworks usedOpenStreetM
 
 📸 Screenshots
 
-![RideCompare Screenshot](screenshots/Screenshot%202026-05-24%20124736.png)
+![Screenshot 1](screenshots/Screenshot%202026-05-24%20124736.png)
+![Screenshot 2](screenshots/Screenshot%202026-05-24%20124800.png)
+![Screenshot 3](screenshots/Screenshot%202026-05-24%20125149.png)
+![Screenshot 4](screenshots/Screenshot%202026-05-24%20125200.png)
 
 
 
