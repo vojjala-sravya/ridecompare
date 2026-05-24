@@ -65,14 +65,14 @@ To deploy your own copy:
 Fork this repository
 Go to Settings → Pages
 Select main branch as source
-Your app will be live at https://YOURUSERNAME.github.io/ridecompare
+Your app will be live at https://vojjala-sravya.github.io/ridecompare
 
 
 👨‍💻 Author
-Your Name
+Sravya Vojjala
 
-GitHub: @YOURUSERNAME
-LinkedIn: Your LinkedIn
+GitHub: Sravya_vojjala
+LinkedIn: https://www.linkedin.com/in/sravya-vojjala/
 
 
 📄 License
