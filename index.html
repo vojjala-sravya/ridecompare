@@ -1,0 +1,672 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>RideCompare — Real Fares, Real Distance</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;1,9..40,300&display=swap" rel="stylesheet" />
+<style>
+  :root {
+    --bg: #0a0a0f;
+    --surface: #13131a;
+    --surface2: #1c1c28;
+    --border: #2a2a3d;
+    --text: #f0f0fa;
+    --muted: #7878a0;
+    --accent: #f7c948;
+    --ola: #1ac464;
+    --uber: #276ef1;
+    --rapido: #ff3e6c;
+    --radius: 16px;
+    --radius-sm: 10px;
+  }
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: var(--bg); color: var(--text); font-family: 'DM Sans', sans-serif; min-height: 100vh; overflow-x: hidden; }
+  body::before {
+    content: ''; position: fixed; inset: 0;
+    background:
+      radial-gradient(ellipse 60% 50% at 15% 10%, rgba(247,201,72,.09) 0%, transparent 60%),
+      radial-gradient(ellipse 50% 60% at 85% 80%, rgba(39,110,241,.09) 0%, transparent 60%),
+      radial-gradient(ellipse 40% 40% at 50% 50%, rgba(255,62,108,.05) 0%, transparent 60%);
+    pointer-events: none; z-index: 0;
+  }
+  .wrap { position: relative; z-index: 1; max-width: 560px; margin: 0 auto; padding: 0 20px 80px; }
+
+  /* Header */
+  header { padding: 44px 0 32px; text-align: center; }
+  .logo-mark { display: inline-flex; align-items: center; gap: 8px; margin-bottom: 16px; }
+  .logo-icon { width: 38px; height: 38px; background: var(--accent); border-radius: 10px; display: grid; place-items: center; font-size: 18px; }
+  .logo-text { font-family: 'Syne', sans-serif; font-weight: 800; font-size: 1.3rem; letter-spacing: -.5px; }
+  .logo-text span { color: var(--accent); }
+  h1 { font-family: 'Syne', sans-serif; font-size: clamp(1.9rem, 7vw, 2.7rem); font-weight: 800; line-height: 1.1; letter-spacing: -1.5px; margin-bottom: 10px; }
+  h1 em { font-style: normal; color: var(--accent); }
+  .tagline { color: var(--muted); font-size: .9rem; font-weight: 300; }
+
+  /* Card */
+  .card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 22px; margin-bottom: 14px; }
+
+  /* Inputs */
+  .input-wrap { position: relative; margin-bottom: 10px; }
+  .input-row {
+    display: flex; align-items: center; gap: 12px;
+    background: var(--surface2); border: 1px solid var(--border);
+    border-radius: var(--radius-sm); padding: 13px 16px;
+    transition: border-color .2s, box-shadow .2s;
+  }
+  .input-row:focus-within { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(247,201,72,.10); }
+  .dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
+  .dot-green { background: var(--ola); }
+  .dot-red   { background: var(--rapido); }
+  input[type="text"] { flex: 1; background: none; border: none; outline: none; color: var(--text); font-family: 'DM Sans', sans-serif; font-size: .95rem; caret-color: var(--accent); }
+  input::placeholder { color: var(--muted); font-weight: 300; }
+  .clear-btn { background: none; border: none; color: var(--muted); cursor: pointer; font-size: 1rem; padding: 0 2px; display: none; transition: color .15s; }
+  .clear-btn:hover { color: var(--text); }
+
+  /* Suggestions */
+  .suggestions { position: absolute; top: calc(100% + 4px); left: 0; right: 0; background: var(--surface2); border: 1px solid var(--border); border-radius: var(--radius-sm); z-index: 50; max-height: 200px; overflow-y: auto; display: none; }
+  .suggestions.open { display: block; }
+  .suggestion-item { padding: 11px 16px; cursor: pointer; font-size: .88rem; border-bottom: 1px solid var(--border); transition: background .15s; display: flex; align-items: flex-start; gap: 8px; }
+  .suggestion-item:last-child { border-bottom: none; }
+  .suggestion-item:hover { background: rgba(247,201,72,.07); }
+  .sug-icon { flex-shrink: 0; margin-top: 1px; opacity: .5; font-size: .85rem; }
+  .sug-main { font-weight: 500; }
+  .sug-sub  { font-size: .78rem; color: var(--muted); margin-top: 1px; }
+  .no-result { padding: 12px 16px; font-size: .85rem; color: var(--muted); text-align: center; }
+
+  /* Swap */
+  .swap-row { display: flex; justify-content: center; margin: -4px 0; position: relative; z-index: 1; }
+  .swap-btn { background: var(--surface2); border: 1px solid var(--border); border-radius: 50%; width: 30px; height: 30px; display: grid; place-items: center; cursor: pointer; font-size: .8rem; transition: background .2s, transform .2s; }
+  .swap-btn:hover { background: var(--border); transform: rotate(180deg); }
+
+  /* Toggle */
+  .section-label { font-family: 'Syne', sans-serif; font-size: .68rem; font-weight: 700; letter-spacing: 1.5px; text-transform: uppercase; color: var(--muted); margin-bottom: 10px; }
+  .toggle-row { display: flex; gap: 8px; }
+  .toggle-btn { flex: 1; padding: 10px 6px; background: var(--surface2); border: 1px solid var(--border); border-radius: var(--radius-sm); color: var(--muted); font-family: 'DM Sans', sans-serif; font-size: .84rem; font-weight: 500; cursor: pointer; transition: all .2s; display: flex; flex-direction: column; align-items: center; gap: 3px; }
+  .toggle-btn .icon { font-size: 1.15rem; }
+  .toggle-btn.active { background: rgba(247,201,72,.12); border-color: var(--accent); color: var(--accent); }
+  .toggle-btn:hover:not(.active) { border-color: var(--muted); color: var(--text); }
+
+  /* Compare btn */
+  .btn-compare { width: 100%; padding: 15px; background: var(--accent); color: #0a0a0f; border: none; border-radius: var(--radius-sm); font-family: 'Syne', sans-serif; font-size: 1rem; font-weight: 700; cursor: pointer; transition: transform .15s, box-shadow .15s, opacity .15s; display: flex; align-items: center; justify-content: center; gap: 8px; }
+  .btn-compare:hover { transform: translateY(-2px); box-shadow: 0 8px 24px rgba(247,201,72,.28); }
+  .btn-compare:disabled { opacity: .45; cursor: not-allowed; transform: none; box-shadow: none; }
+
+  /* Loader */
+  #loader { display: none; text-align: center; padding: 44px 0; }
+  .loader-dots { display: flex; justify-content: center; gap: 6px; margin-bottom: 14px; }
+  .loader-dots span { width: 8px; height: 8px; background: var(--accent); border-radius: 50%; animation: bounce 1.2s ease-in-out infinite; }
+  .loader-dots span:nth-child(2) { animation-delay: .2s; }
+  .loader-dots span:nth-child(3) { animation-delay: .4s; }
+  @keyframes bounce { 0%,80%,100%{transform:scale(.6);opacity:.4} 40%{transform:scale(1);opacity:1} }
+  .loader-text { color: var(--muted); font-size: .88rem; font-style: italic; }
+
+  /* Error */
+  #errorBox { display: none; background: rgba(255,62,108,.08); border: 1px solid rgba(255,62,108,.3); border-radius: var(--radius-sm); padding: 14px 16px; margin-bottom: 14px; font-size: .88rem; color: #ff8aaa; text-align: center; }
+
+  /* Route bar */
+  .route-bar { background: var(--surface2); border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 12px 16px; display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px; font-size: .85rem; flex-wrap: wrap; gap: 8px; }
+  .route-bar .route-text { color: var(--muted); flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .route-bar .route-text strong { color: var(--text); font-weight: 500; }
+  .route-stats { display: flex; gap: 14px; flex-shrink: 0; }
+  .route-stat { text-align: right; }
+  .route-stat .val { font-family: 'Syne', sans-serif; font-weight: 700; font-size: .95rem; color: var(--accent); }
+  .route-stat .lbl { font-size: .7rem; color: var(--muted); }
+
+  /* Share bar */
+  .share-bar { display: flex; gap: 8px; margin-bottom: 14px; }
+  .btn-share {
+    flex: 1; padding: 10px 14px; border-radius: var(--radius-sm);
+    font-family: 'DM Sans', sans-serif; font-size: .85rem; font-weight: 500;
+    cursor: pointer; border: 1.5px solid var(--border); background: none;
+    color: var(--muted); transition: all .2s; display: flex; align-items: center; justify-content: center; gap: 6px;
+  }
+  .btn-share:hover { border-color: var(--text); color: var(--text); }
+  .btn-share.whatsapp:hover { border-color: #25D366; color: #25D366; }
+  .btn-share.copy:hover { border-color: var(--accent); color: var(--accent); }
+
+  /* Results */
+  #results { display: none; }
+  .results-heading { font-family: 'Syne', sans-serif; font-size: .72rem; font-weight: 700; letter-spacing: .5px; text-transform: uppercase; color: var(--muted); margin-bottom: 12px; }
+
+  /* Ride card */
+  .ride-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 20px; margin-bottom: 11px; position: relative; overflow: hidden; transition: transform .2s, box-shadow .2s; animation: slideUp .35s ease both; }
+  .ride-card:nth-child(2) { animation-delay: .07s; }
+  .ride-card:nth-child(3) { animation-delay: .14s; }
+  .ride-card:hover { transform: translateY(-3px); box-shadow: 0 12px 32px rgba(0,0,0,.4); }
+  @keyframes slideUp { from{opacity:0;transform:translateY(18px)} to{opacity:1;transform:translateY(0)} }
+  .ride-card::before { content:''; position:absolute; left:0;top:0;bottom:0; width:3px; border-radius:3px 0 0 3px; }
+  .ola-card::before    { background: var(--ola); }
+  .uber-card::before   { background: var(--uber); }
+  .rapido-card::before { background: var(--rapido); }
+
+  .cheapest-badge { position: absolute; top: 14px; right: 14px; background: var(--accent); color: #0a0a0f; font-family: 'Syne', sans-serif; font-size: .6rem; font-weight: 800; letter-spacing: 1px; text-transform: uppercase; padding: 3px 8px; border-radius: 99px; }
+
+  .card-top { display: flex; align-items: center; gap: 12px; margin-bottom: 14px; }
+  .app-logo { width: 40px; height: 40px; border-radius: 10px; display: grid; place-items: center; font-size: 1.2rem; flex-shrink: 0; }
+  .ola-logo    { background: rgba(26,196,100,.12); }
+  .uber-logo   { background: rgba(39,110,241,.12); }
+  .rapido-logo { background: rgba(255,62,108,.12); }
+  .app-info { flex: 1; }
+  .app-name { font-family: 'Syne', sans-serif; font-weight: 700; font-size: .98rem; letter-spacing: -.3px; margin-bottom: 2px; }
+  .ride-type { font-size: .78rem; color: var(--muted); font-weight: 300; }
+  .price-block { text-align: right; }
+  .price { font-family: 'Syne', sans-serif; font-size: 1.55rem; font-weight: 800; letter-spacing: -1px; line-height: 1; }
+  .price-note { font-size: .7rem; color: var(--muted); margin-top: 2px; }
+
+  /* Fare breakdown */
+  .fare-breakdown { background: var(--surface2); border-radius: var(--radius-sm); padding: 10px 14px; margin-bottom: 12px; font-size: .78rem; }
+  .breakdown-row { display: flex; justify-content: space-between; padding: 3px 0; color: var(--muted); }
+  .breakdown-row.total { border-top: 1px solid var(--border); margin-top: 4px; padding-top: 7px; color: var(--text); font-weight: 500; }
+  .breakdown-row span:last-child { font-family: 'Syne', sans-serif; font-weight: 600; }
+
+  .card-meta { display: flex; gap: 7px; flex-wrap: wrap; margin-bottom: 12px; }
+  .meta-pill { display: flex; align-items: center; gap: 5px; background: var(--surface2); border: 1px solid var(--border); border-radius: 99px; padding: 5px 10px; font-size: .76rem; color: var(--muted); }
+
+  /* History */
+  #historySection { display: none; margin-bottom: 14px; }
+  .history-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; }
+  .history-title { font-family: 'Syne', sans-serif; font-size: .72rem; font-weight: 700; letter-spacing: .5px; text-transform: uppercase; color: var(--muted); }
+  .history-clear { background: none; border: none; color: var(--muted); font-size: .75rem; cursor: pointer; font-family: 'DM Sans', sans-serif; transition: color .15s; }
+  .history-clear:hover { color: var(--rapido); }
+  .history-item { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 12px 16px; margin-bottom: 8px; cursor: pointer; transition: border-color .2s, background .2s; display: flex; align-items: center; gap: 12px; }
+  .history-item:hover { border-color: var(--accent); background: rgba(247,201,72,.04); }
+  .history-icon { font-size: 1rem; opacity: .5; flex-shrink: 0; }
+  .history-route { flex: 1; min-width: 0; }
+  .history-from-to { font-size: .85rem; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .history-meta { font-size: .74rem; color: var(--muted); margin-top: 2px; }
+  .history-cheapest { font-family: 'Syne', sans-serif; font-weight: 700; font-size: .9rem; color: var(--accent); flex-shrink: 0; }
+
+  /* Toast */
+  .toast { position: fixed; bottom: 26px; left: 50%; transform: translateX(-50%) translateY(80px); background: var(--surface2); border: 1px solid var(--border); border-radius: 99px; padding: 10px 20px; font-size: .84rem; white-space: nowrap; transition: transform .3s cubic-bezier(.34,1.56,.64,1); z-index: 100; }
+  .toast.show { transform: translateX(-50%) translateY(0); }
+
+  .api-note { text-align: center; font-size: .72rem; color: var(--muted); opacity: .5; margin-top: 6px; font-style: italic; }
+  footer { text-align: center; padding: 28px 0 0; color: var(--muted); font-size: .72rem; opacity: .4; }
+
+  @keyframes shakeX { 0%,100%{transform:translateX(0)} 20%{transform:translateX(-6px)} 40%{transform:translateX(6px)} 60%{transform:translateX(-4px)} 80%{transform:translateX(4px)} }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header>
+    <div class="logo-mark">
+      <div class="logo-icon">🛺</div>
+      <div class="logo-text">Ride<span>Compare</span></div>
+    </div>
+    <h1>Real distance,<br><em>real fares.</em></h1>
+    <p class="tagline">Compare Ola · Uber · Rapido with actual route data</p>
+  </header>
+
+  <!-- Search card -->
+  <div class="card">
+    <div class="input-wrap" id="pickupWrap">
+      <div class="input-row" id="pickupRow">
+        <div class="dot dot-green"></div>
+        <input type="text" id="pickup" placeholder="Pickup — e.g. Uppal, Hyderabad" autocomplete="off" />
+        <button class="clear-btn" id="clearPickup">✕</button>
+      </div>
+      <div class="suggestions" id="pickupSuggestions"></div>
+    </div>
+
+    <div class="swap-row">
+      <button class="swap-btn" id="swapBtn" title="Swap">⇅</button>
+    </div>
+
+    <div class="input-wrap" id="dropWrap" style="margin-top:10px;margin-bottom:16px">
+      <div class="input-row" id="dropRow">
+        <div class="dot dot-red"></div>
+        <input type="text" id="drop" placeholder="Drop — e.g. Hitech City, Hyderabad" autocomplete="off" />
+        <button class="clear-btn" id="clearDrop">✕</button>
+      </div>
+      <div class="suggestions" id="dropSuggestions"></div>
+    </div>
+
+    <div class="section-label">Ride type</div>
+    <div class="toggle-row" style="margin-bottom:16px">
+      <button class="toggle-btn active" data-type="bike"><span class="icon">🏍️</span>Bike</button>
+      <button class="toggle-btn" data-type="auto"><span class="icon">🛺</span>Auto</button>
+      <button class="toggle-btn" data-type="cab"><span class="icon">🚕</span>Cab</button>
+    </div>
+
+    <button class="btn-compare" id="compareBtn">⚡ Compare Fares</button>
+  </div>
+
+  <!-- Search history -->
+  <div id="historySection">
+    <div class="history-header">
+      <div class="history-title">Recent searches</div>
+      <button class="history-clear" id="historyClear">Clear all</button>
+    </div>
+    <div id="historyList"></div>
+  </div>
+
+  <div id="errorBox"></div>
+
+  <div id="loader">
+    <div class="loader-dots"><span></span><span></span><span></span></div>
+    <p class="loader-text" id="loaderText">Calculating real route…</p>
+  </div>
+
+  <div id="results">
+    <!-- Route info -->
+    <div class="route-bar" id="routeBar">
+      <div class="route-text"><strong id="routeFrom">—</strong> → <strong id="routeTo">—</strong></div>
+      <div class="route-stats">
+        <div class="route-stat"><div class="val" id="statDist">—</div><div class="lbl">distance</div></div>
+        <div class="route-stat"><div class="val" id="statTime">—</div><div class="lbl">drive time</div></div>
+      </div>
+    </div>
+
+    <!-- Share buttons -->
+    <div class="share-bar">
+      <button class="btn-share whatsapp" id="btnWhatsapp">
+        <span>💬</span> Share on WhatsApp
+      </button>
+      <button class="btn-share copy" id="btnCopy">
+        <span>📋</span> Copy
+      </button>
+    </div>
+
+    <div class="results-heading">Available rides — sorted cheapest first</div>
+    <div id="cardsContainer"></div>
+    <p class="api-note">Distances via OpenStreetMap · Fares are estimates</p>
+  </div>
+
+  <footer>RideCompare · Powered by OpenStreetMap & OSRM · Free & open source</footer>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+// ── Provider data ──
+const PROVIDERS = {
+  ola: {
+    name: 'Ola', icon: '🟢', logoClass: 'ola-logo', cardClass: 'ola-card',
+    rates: { bike: 5, auto: 10, cab: 14 },
+    base:  { bike: 25, auto: 40, cab: 55 },
+    etaExtra: { bike: 0, auto: 1, cab: 2 },
+    types: { bike: 'Ola Bike', auto: 'Ola Auto', cab: 'Ola Prime' },
+    surgeRange: [1.0, 1.15],
+  },
+  uber: {
+    name: 'Uber', icon: '🔵', logoClass: 'uber-logo', cardClass: 'uber-card',
+    rates: { bike: 6, auto: 11, cab: 16 },
+    base:  { bike: 30, auto: 45, cab: 65 },
+    etaExtra: { bike: 1, auto: 2, cab: 3 },
+    types: { bike: 'Uber Moto', auto: 'Uber Auto', cab: 'UberGo' },
+    surgeRange: [1.0, 1.25],
+  },
+  rapido: {
+    name: 'Rapido', icon: '🔴', logoClass: 'rapido-logo', cardClass: 'rapido-card',
+    rates: { bike: 4, auto: 9, cab: 13 },
+    base:  { bike: 20, auto: 35, cab: 50 },
+    etaExtra: { bike: 0, auto: 1, cab: 2 },
+    types: { bike: 'Rapido Bike', auto: 'Rapido Auto', cab: 'Rapido Cab' },
+    surgeRange: [1.0, 1.10],
+  },
+};
+
+// ── State ──
+let rideType = 'bike';
+let pickupCoord = null;
+let dropCoord   = null;
+let lastFares   = [];   // stored for share feature
+
+// ── Ride type toggle ──
+document.querySelectorAll('.toggle-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.toggle-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    rideType = btn.dataset.type;
+  });
+});
+
+// ── Swap ──
+document.getElementById('swapBtn').addEventListener('click', () => {
+  const pv = document.getElementById('pickup').value;
+  const dv = document.getElementById('drop').value;
+  document.getElementById('pickup').value = dv;
+  document.getElementById('drop').value   = pv;
+  const tmp = pickupCoord; pickupCoord = dropCoord; dropCoord = tmp;
+  updateClearBtn('pickup'); updateClearBtn('drop');
+});
+
+// ── Clear buttons ──
+document.getElementById('clearPickup').addEventListener('click', () => {
+  document.getElementById('pickup').value = ''; pickupCoord = null;
+  updateClearBtn('pickup'); document.getElementById('pickup').focus();
+});
+document.getElementById('clearDrop').addEventListener('click', () => {
+  document.getElementById('drop').value = ''; dropCoord = null;
+  updateClearBtn('drop'); document.getElementById('drop').focus();
+});
+function updateClearBtn(id) {
+  const val = document.getElementById(id).value;
+  const btnId = 'clear' + id.charAt(0).toUpperCase() + id.slice(1);
+  document.getElementById(btnId).style.display = val ? 'block' : 'none';
+}
+
+// ── Autocomplete ──
+let suggestTimers = {};
+function setupAutocomplete(inputId, sugId, coordSetter) {
+  const input = document.getElementById(inputId);
+  const box   = document.getElementById(sugId);
+  input.addEventListener('input', () => {
+    updateClearBtn(inputId);
+    coordSetter(null);
+    clearTimeout(suggestTimers[inputId]);
+    const q = input.value.trim();
+    if (q.length < 3) { box.classList.remove('open'); return; }
+    suggestTimers[inputId] = setTimeout(() => fetchSuggestions(q, box, input, coordSetter), 400);
+  });
+  input.addEventListener('keydown', e => { if (e.key === 'Escape') box.classList.remove('open'); });
+  document.addEventListener('click', e => {
+    if (!input.contains(e.target) && !box.contains(e.target)) box.classList.remove('open');
+  });
+}
+
+async function fetchSuggestions(query, box, input, coordSetter) {
+  try {
+    const url  = `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(query)}&format=json&addressdetails=1&limit=5&countrycodes=in`;
+    const res  = await fetch(url, { headers: { 'Accept-Language': 'en' } });
+    const data = await res.json();
+    renderSuggestions(data, box, input, coordSetter);
+  } catch {
+    box.innerHTML = '<div class="no-result">Could not fetch suggestions</div>';
+    box.classList.add('open');
+  }
+}
+
+function renderSuggestions(items, box, input, coordSetter) {
+  box.innerHTML = '';
+  if (!items.length) {
+    box.innerHTML = '<div class="no-result">No results found</div>';
+    box.classList.add('open'); return;
+  }
+  items.forEach(item => {
+    const div  = document.createElement('div');
+    div.className = 'suggestion-item';
+    const addr = item.address;
+    const main = addr.amenity || addr.road || addr.neighbourhood || addr.suburb || item.display_name.split(',')[0];
+    const sub  = [addr.suburb, addr.city || addr.town, addr.state].filter(Boolean).join(', ');
+    div.innerHTML = `<span class="sug-icon">📍</span><div><div class="sug-main">${main}</div><div class="sug-sub">${sub}</div></div>`;
+    div.addEventListener('click', () => {
+      input.value = main + (sub ? ', ' + sub : '');
+      coordSetter({ lat: parseFloat(item.lat), lon: parseFloat(item.lon), label: main });
+      box.classList.remove('open');
+      updateClearBtn(input.id);
+    });
+    box.appendChild(div);
+  });
+  box.classList.add('open');
+}
+
+setupAutocomplete('pickup', 'pickupSuggestions', c => pickupCoord = c);
+setupAutocomplete('drop',   'dropSuggestions',   c => dropCoord   = c);
+
+// ── Compare ──
+document.getElementById('compareBtn').addEventListener('click', doCompare);
+
+async function doCompare() {
+  if (!document.getElementById('pickup').value.trim()) { shake('pickupRow'); return; }
+  if (!document.getElementById('drop').value.trim())   { shake('dropRow');   return; }
+
+  if (!pickupCoord) pickupCoord = await geocodeText(document.getElementById('pickup').value);
+  if (!dropCoord)   dropCoord   = await geocodeText(document.getElementById('drop').value);
+
+  if (!pickupCoord || !dropCoord) {
+    showError('Could not find one or both locations. Try selecting from the dropdown suggestions.');
+    return;
+  }
+
+  hideError();
+  document.getElementById('results').style.display = 'none';
+  document.getElementById('loader').style.display  = 'block';
+  document.getElementById('compareBtn').disabled   = true;
+
+  try {
+    const route = await getRoute(pickupCoord, dropCoord);
+    if (!route) throw new Error('No route');
+    buildResults(route);
+    saveToHistory(route);
+  } catch {
+    showError('Could not calculate route. Please check locations and try again.');
+  } finally {
+    document.getElementById('loader').style.display = 'none';
+    document.getElementById('compareBtn').disabled  = false;
+  }
+}
+
+async function geocodeText(text) {
+  try {
+    const url  = `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(text)}&format=json&limit=1&countrycodes=in`;
+    const res  = await fetch(url, { headers: { 'Accept-Language': 'en' } });
+    const data = await res.json();
+    if (!data.length) return null;
+    const addr  = data[0].address;
+    const label = addr.amenity || addr.road || addr.neighbourhood || data[0].display_name.split(',')[0];
+    return { lat: parseFloat(data[0].lat), lon: parseFloat(data[0].lon), label };
+  } catch { return null; }
+}
+
+async function getRoute(from, to) {
+  const url  = `https://router.project-osrm.org/route/v1/driving/${from.lon},${from.lat};${to.lon},${to.lat}?overview=false`;
+  const res  = await fetch(url);
+  const data = await res.json();
+  if (data.code !== 'Ok' || !data.routes.length) return null;
+  const r = data.routes[0];
+  return { distanceKm: r.distance / 1000, durationMin: Math.round(r.duration / 60) };
+}
+
+// ── Build results ──
+function buildResults({ distanceKm, durationMin }) {
+  const km = distanceKm;
+
+  document.getElementById('routeFrom').textContent = pickupCoord.label;
+  document.getElementById('routeTo').textContent   = dropCoord.label;
+  document.getElementById('statDist').textContent  = km.toFixed(1) + ' km';
+  document.getElementById('statTime').textContent  = durationMin + ' min';
+
+  // Calculate fares
+  const fares = Object.entries(PROVIDERS).map(([id, p]) => {
+    const [sMin, sMax] = p.surgeRange;
+    const surge        = sMin + Math.random() * (sMax - sMin);
+    const baseFare     = p.base[rideType];
+    const distFare     = Math.round(p.rates[rideType] * km);
+    const surgeAmount  = Math.round((baseFare + distFare) * (surge - 1));
+    const total        = baseFare + distFare + surgeAmount;
+    const eta          = durationMin + p.etaExtra[rideType] + Math.floor(Math.random() * 3);
+    return { id, total, baseFare, distFare, surgeAmount, surge, eta };
+  });
+
+  const minFare = Math.min(...fares.map(f => f.total));
+  fares.sort((a, b) => a.total - b.total);
+  lastFares = fares; // store for share
+
+  const container = document.getElementById('cardsContainer');
+  container.innerHTML = '';
+
+  fares.forEach(({ id, total, baseFare, distFare, surgeAmount, eta }) => {
+    const p          = PROVIDERS[id];
+    const isCheapest = total === minFare;
+    const card       = document.createElement('div');
+    card.className   = `ride-card ${p.cardClass}`;
+    card.innerHTML   = `
+      ${isCheapest ? '<div class="cheapest-badge">🏆 Cheapest</div>' : ''}
+      <div class="card-top">
+        <div class="app-logo ${p.logoClass}">${p.icon}</div>
+        <div class="app-info">
+          <div class="app-name">${p.name}</div>
+          <div class="ride-type">${p.types[rideType]}</div>
+        </div>
+        <div class="price-block">
+          <div class="price">₹${total}</div>
+          <div class="price-note">estimated fare</div>
+        </div>
+      </div>
+
+      <div class="fare-breakdown">
+        <div class="breakdown-row"><span>Base fare</span><span>₹${baseFare}</span></div>
+        <div class="breakdown-row"><span>Distance (${km.toFixed(1)} km × ₹${p.rates[rideType]})</span><span>₹${distFare}</span></div>
+        ${surgeAmount > 0 ? `<div class="breakdown-row"><span>Surge charge</span><span>₹${surgeAmount}</span></div>` : ''}
+        <div class="breakdown-row total"><span>Total estimate</span><span>₹${total}</span></div>
+      </div>
+
+      <div class="card-meta">
+        <div class="meta-pill">⏱ ${eta} min ETA</div>
+        <div class="meta-pill">📍 ${km.toFixed(1)} km</div>
+      </div>
+    `;
+    container.appendChild(card);
+  });
+
+  document.getElementById('results').style.display = 'block';
+  document.getElementById('results').scrollIntoView({ behavior: 'smooth', block: 'start' });
+  setupShareButtons(km, durationMin);
+}
+
+// ── Share feature ──
+function buildShareText(km, durationMin) {
+  const lines = [
+    `🛺 *RideCompare — Fare Estimate*`,
+    `📍 ${pickupCoord.label} → ${dropCoord.label}`,
+    `🛣️ ${km.toFixed(1)} km · ${durationMin} min drive`,
+    ``,
+  ];
+  lastFares.forEach(({ id, total }, i) => {
+    const p     = PROVIDERS[id];
+    const crown = i === 0 ? '🏆 ' : '   ';
+    lines.push(`${crown}${p.name}: ₹${total}`);
+  });
+  lines.push(``, `Checked on RideCompare`);
+  return lines.join('\n');
+}
+
+function setupShareButtons(km, durationMin) {
+  document.getElementById('btnWhatsapp').onclick = () => {
+    const text = buildShareText(km, durationMin);
+    window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, '_blank');
+  };
+  document.getElementById('btnCopy').onclick = () => {
+    const text = buildShareText(km, durationMin);
+    navigator.clipboard.writeText(text).then(() => {
+      showToast('✅ Copied to clipboard!');
+    }).catch(() => {
+      // fallback for older browsers
+      const ta = document.createElement('textarea');
+      ta.value = text; document.body.appendChild(ta);
+      ta.select(); document.execCommand('copy');
+      document.body.removeChild(ta);
+      showToast('✅ Copied to clipboard!');
+    });
+  };
+}
+
+// ── Search history (localStorage) ──
+const HISTORY_KEY = 'rc_history';
+
+function saveToHistory({ distanceKm, durationMin }) {
+  const cheapest = lastFares[0];
+  const entry = {
+    pickup:    pickupCoord.label,
+    drop:      dropCoord.label,
+    km:        distanceKm.toFixed(1),
+    duration:  durationMin,
+    type:      rideType,
+    cheapApp:  PROVIDERS[cheapest.id].name,
+    cheapFare: cheapest.total,
+    time:      Date.now(),
+  };
+  let history = loadHistory();
+  // Remove duplicate same route
+  history = history.filter(h => !(h.pickup === entry.pickup && h.drop === entry.drop && h.type === entry.type));
+  history.unshift(entry);
+  history = history.slice(0, 5); // keep last 5
+  localStorage.setItem(HISTORY_KEY, JSON.stringify(history));
+  renderHistory();
+}
+
+function loadHistory() {
+  try { return JSON.parse(localStorage.getItem(HISTORY_KEY)) || []; }
+  catch { return []; }
+}
+
+function renderHistory() {
+  const history = loadHistory();
+  const section = document.getElementById('historySection');
+  const list    = document.getElementById('historyList');
+  if (!history.length) { section.style.display = 'none'; return; }
+  section.style.display = 'block';
+  list.innerHTML = '';
+  history.forEach(h => {
+    const item = document.createElement('div');
+    item.className = 'history-item';
+    const typeIcon = { bike: '🏍️', auto: '🛺', cab: '🚕' }[h.type] || '🚗';
+    const ago = timeAgo(h.time);
+    item.innerHTML = `
+      <div class="history-icon">${typeIcon}</div>
+      <div class="history-route">
+        <div class="history-from-to">${h.pickup} → ${h.drop}</div>
+        <div class="history-meta">${h.km} km · ${h.duration} min · ${ago}</div>
+      </div>
+      <div class="history-cheapest">₹${h.cheapFare}<br><span style="font-size:.65rem;font-weight:400;color:var(--muted)">${h.cheapApp}</span></div>
+    `;
+    item.addEventListener('click', () => {
+      // Re-fill inputs from history
+      document.getElementById('pickup').value = h.pickup;
+      document.getElementById('drop').value   = h.drop;
+      // Set ride type
+      document.querySelectorAll('.toggle-btn').forEach(b => {
+        b.classList.toggle('active', b.dataset.type === h.type);
+      });
+      rideType = h.type;
+      updateClearBtn('pickup'); updateClearBtn('drop');
+      // Reset coords so geocode runs fresh
+      pickupCoord = null; dropCoord = null;
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    });
+    list.appendChild(item);
+  });
+}
+
+document.getElementById('historyClear').addEventListener('click', () => {
+  localStorage.removeItem(HISTORY_KEY);
+  renderHistory();
+  showToast('🗑️ History cleared');
+});
+
+function timeAgo(ts) {
+  const diff = Date.now() - ts;
+  const mins = Math.floor(diff / 60000);
+  if (mins < 1)  return 'just now';
+  if (mins < 60) return `${mins}m ago`;
+  const hrs = Math.floor(mins / 60);
+  if (hrs < 24)  return `${hrs}h ago`;
+  return `${Math.floor(hrs / 24)}d ago`;
+}
+
+// ── Helpers ──
+function shake(id) {
+  const el = document.getElementById(id);
+  el.style.animation = 'none'; el.offsetHeight;
+  el.style.animation = 'shakeX .35s ease';
+  el.style.borderColor = 'var(--rapido)';
+  setTimeout(() => { el.style.borderColor = ''; el.style.animation = ''; }, 800);
+}
+function showError(msg) {
+  const b = document.getElementById('errorBox');
+  b.textContent = '⚠️ ' + msg; b.style.display = 'block';
+}
+function hideError() { document.getElementById('errorBox').style.display = 'none'; }
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg; t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2500);
+}
+
+// ── Init: load history on page load ──
+renderHistory();
+</script>
+</body>
+</html>
